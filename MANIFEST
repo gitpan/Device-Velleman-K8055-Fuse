@@ -1,0 +1,17 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+lib/Device/Velleman/K8055/Fuse.pm
+t/00_init.t
+t/01_new.t
+t/02_convert.t
+t/03_input_a.t
+t/03_input_d.t
+t/04_output_a.t
+t/04_output_d.t
+t/06_counter.t.deep
+examples/01_simple.pl
+examples/02_reader.pl
+examples/02_setter.pl
+META.yml                                 Module meta-data (added by MakeMaker)

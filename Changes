@@ -1,0 +1,6 @@
+Revision history for Perl extension Device::Velleman::K8055::Fuse.
+
+0.01  Sun Mar 23 13:06:52 2008
+	- original version; created by h2xs 1.23 with options
+		-AXc -n Device::Velleman::K8055::Fuse
+
