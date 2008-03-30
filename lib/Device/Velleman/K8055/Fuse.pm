@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.2
+Version 0.3
 
 =head1 ABSTRACT
 
@@ -51,9 +51,7 @@ Using the module, it is possible to set two 5v analog output ports, read from tw
     # clear the analog output
     $dev->ClearAllAnalog();
 
-=head1 USAGE
-
-=head2 new(pathToDevice=>'/path/to/device',debug=>1)
+In order to work with this module, the k8055fs utility must be installed. This utility relies on Fuse, which must also be installed.
 
 =cut
 
@@ -100,7 +98,7 @@ my %default_attrs = (
 
 );
 
-=head2 $dev new(%attributes)
+=head2 new(%args)
 
 The constructor. Buils the object.
 
@@ -167,7 +165,7 @@ sub new ($;@) {
     return $dev;
 }
 
-=head2 $string ReadAnalogChannel($channel);
+=head2 ReadAnalogChannel();
 
 This reads the value from the analog channel indicated by $channel (1 or 2).
 The input voltage of the selected 8-bit Analogue to Digital converter channel is converted to a value
@@ -184,7 +182,7 @@ sub ReadAnalogChannel ($$) {
     return $res;
 }
 
-=head2 ($one,$two)  ReadAllAnalog();
+=head2 ReadAllAnalog();
 
 This reads the values from the two analog ports into $data1 and $data2.
 
@@ -200,7 +198,7 @@ sub ReadAllAnalog ($) {
     return ( $one, $two );
 }
 
-=head2 $result OutputAnalogChannel($channel, $value);
+=head2 OutputAnalogChannel();
 
 This outputs $value to the analog channel indicated by $channel.
 The indicated 8-bit Digital to Analogue Converter channel is altered according to the new value.
@@ -218,7 +216,7 @@ sub OutputAnalogChannel($$) {
     $self->set( "analog_out" . $cid, $val );
 }
 
-=head2 ($value, $value2) OutputAllAnalog();
+=head2 OutputAllAnalog();
 
 This outputs $value1 to the first analog channel, and $value2 to the
 second analog channel. See OutputAnalogChannel for more information.
@@ -236,10 +234,15 @@ sub OutputAllAnalog($@) {
     $self->set( "analog_out" . $cid, $val2 );
 }
 
-=head2 $value ClearAnalogChannel($channel);
+=head2 ClearAnalogChannel();
 
-This clears the analog channel indicated by $channel. The selected DA-channel is set to
-minimum output voltage (0 Volt).
+This clears the analog channel indicated by $channel. The selected DA-channel is set to minimum output voltage (0 Volt).
+
+Input: channel number
+
+Output: value between 0 (min) and 255 (max)
+
+ $dev->ClearAnalogChannel(1);
 
 =cut
 
@@ -268,7 +271,7 @@ sub ClearAllAnalog($) {
     return 0;
 }
 
-=head2 $value SetAnalogChannel($channel);
+=head2 SetAnalogChannel($channel);
 
 The selected 8-bit Digital to Analogue Converter channel is set to maximum output voltage.
 Returns the set value.
@@ -435,7 +438,7 @@ sub SetAllDigital ($) {
     return 1;
 }
 
-=head2 $value  ReadAllDigital('bin') or ReadAllDigital();
+=head2 ReadAllDigital('bin') or ReadAllDigital();
 
 This reads all 5 digital ports at once. The 5 least significant bits correspond to the
 status of the input channels. A high (1) means that the channel is set, a low (0) means that the channel is cleared.
@@ -470,7 +473,7 @@ sub ReadAllDigital ($;$) {
 
 }
 
-=head2 $value = ReadDigitalChannel($channel);
+=head2 ReadDigitalChannel($channel);
 
 The status of the selected input $channel is read.
 
@@ -498,7 +501,7 @@ sub ReadDigitalChannel ($$) {
     return $val;
 }
 
-=head2 $value = ReadCounter($counternumber);
+=head2 ReadCounter($counternumber);
 
 The function returns the status of the selected 16 bit pulse counter.
 The counter number 1 counts the pulses fed to the input I1 and the counter number 2 counts the
@@ -516,7 +519,7 @@ sub ReadCounter ($$) {
     $self->get( "counter" . $cid );
 }
 
-=head2 $value = ResetCounter($counternumber);
+=head2 ResetCounter($counternumber);
 
 This resets the selected pulse counter.
 
@@ -530,7 +533,7 @@ sub ResetCounter ($$) {
     $self->set( "counter" . $cid, 0 );
 }
 
-=head2 $time SetCounterDebounceTime($counternumber, $debouncetime);
+=head2 SetCounterDebounceTime($counternumber, $debouncetime);
 
 The counter inputs are debounced in the software to prevent false triggering when mechanical
 switches or relay inputs are used. The debounce time is equal for both falling and rising edges. The
@@ -560,40 +563,11 @@ sub SetCounterDebounceTime($$$) {
     $self->set( "debounce" . $cid, $time );
 }
 
-=head1 AUTHOR
-
-Ronan Oger, C<< <ronan@cpan.org> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Special thanks to Jouke Visser, author of Device::Velleman::K8055 for writing the original win32-based module. I extensively copied his documentation and derived the method names from the names used by Jouke.
-
-=head1 BUGS
-
-Likely to be many, please use http://rt.cpan.org/ for reporting bugs.
-
-=head1 SEE ALSO
-
-For more information on this board, visit http://www.velleman.be.
-
-For more information on the K0855fs fuse implementation of K0855, visit  https://launchpad.net/k8055fs
-
-For more information on the Fuse driver, visit the FUSE project on sourceforge: http://fuse.sourceforge.net
-
-For Win32 applications, see Jouke Visser's Device::Velleman::K8055 implementation.
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2008 Ronan Oger, All Rights Reserved.
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-=cut
-
 =head2 get($file,$value)
 
 uses IO::File to retrieve data from the FUSE files. Refer to the k8055fs readme for details.
+
+  $dev->set('/tmp/8055/digital_out',255);
 
 This is a low-level call that is not particualrly intended for direct access from the API.
 
@@ -630,7 +604,13 @@ sub get ($$) {
 
 uses IO::File to send io to the FUSE files. Refer to the k8055fs readme for details.
 
+  $dev->set('/tmp/8055/digital_out',255);
+
 This is a low-level call that is not particualrly intended for direct access from the API.
+Using the set function could desynchronize the internal representation for the binary array
+held in array 
+  
+  $dev->{binary_out}
 
 Returns $value on success and undef on error.
 
@@ -661,6 +641,22 @@ sub set ($$$) {
 }
 
 #from Perl Cookbook (Oreilly)
+
+=head2 dec2bin($dec) 
+
+convert a decimal to a string representing a bin
+
+The binary string is represented as a big-endiani. In big-endian encoding, digits increase as the string progresses to the left:
+
+   0 (dec) =        0 (bin).
+   1 (dec) =        1 (bin).
+   2 (dec) =       10 (bin).
+   3 (dec) =       11 (bin).
+   4 (dec) =      100 (bin).
+ 255 (dec) = 11111111 (bin).
+
+=cut
+
 sub dec2bin ($$) {
     my $self = shift;
     my $dec  = shift || 0;
@@ -669,13 +665,21 @@ sub dec2bin ($$) {
     return $str;
 }
 
+=head2 bin2dec($bin) 
+
+convert a string representing a binary number  to a  decimal number.
+
+Refer to dec2bin for information on the binary format in use.
+
+=cut
+
 sub bin2dec ($$) {
     my $self = shift;
     my $bin  = shift;
     return unpack( "N", pack( "B32", substr( "0" x 32 . $bin, -32 ) ) );
 }
 
-=head2 $status InitDevice (\%args)
+=head2 InitDevice (\%args)
 
 Initialises the k8055 USB device by mounting the k8055 file system.
 
@@ -690,10 +694,10 @@ Input arguments
 
 pathToDevice: Desired mount point of the k8055fs application.  This directory needs to be accessible by the user.
 
--fuseOptions: additional options to pass to FUSE.
+fuseOptions: additional options to pass to FUSE.
 
 
--test: do not run the k8055fs initialiaation. Print the command to STDOUT and return success. This is for debugging support.
+test: do not run the k8055fs initialiaation. Print the command to STDOUT and return success. This is for debugging support.
 
 See also new().
 
@@ -766,4 +770,35 @@ sub InitDevice ($$) {
     return;
 }
 
-1;
+=head1 AUTHOR
+
+Ronan Oger, C<< <ronan@cpan.org> >>
+
+=head1 ACKNOWLEDGEMENTS
+
+Special thanks to Jouke Visser, author of Device::Velleman::K8055 for writing the original win32-based module. I extensively copied his documentation and derived the method names from the names used by Jouke.
+
+=head1 BUGS
+
+Likely to be many, please use http://rt.cpan.org/ for reporting bugs. The counter functionality is poorly tested and I suspect it has bugs.
+
+=head1 SEE ALSO
+
+For more information on this board, visit http://www.velleman.be.
+
+For more information on the K0855fs fuse implementation of K0855, visit  https://launchpad.net/k8055fs
+
+For more information on the Fuse driver, visit the FUSE project on sourceforge: http://fuse.sourceforge.net
+
+For Win32 applications, see Jouke Visser's Device::Velleman::K8055 implementation.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2008 Ronan Oger, All Rights Reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
+1
