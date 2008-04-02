@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.3';
+our $VERSION = '0.5';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.3
+Version 0.5
 
 =head1 ABSTRACT
 
@@ -152,6 +152,7 @@ sub new ($;@) {
 	$dev->InitDevice( $dev->{initDevice} );
 
     } else {
+	unless ($self->{testHarness}) {
 	#check for the existance of the directory
 	warn("Mount point [$dev->{pathToDevice}] does not exist") 
 		unless -d $dev->{pathToDevice};
@@ -160,6 +161,7 @@ sub new ($;@) {
     	warn("Mount point [$dev->{pathToDevice}] is not writable by user")
       		unless -w $dev->{pathToDevice};
 	}
+	}
 
 
     return $dev;
@@ -167,11 +169,14 @@ sub new ($;@) {
 
 =head2 ReadAnalogChannel();
 
+ $val1 = $dev->ReadAnalogChannel(1);
+ $val2 = $dev->ReadAnalogChannel(2);
+
 This reads the value from the analog channel indicated by $channel (1 or 2).
 The input voltage of the selected 8-bit Analogue to Digital converter channel is converted to a value
 which lies between 0 and 255.
 
-Returns the string containing the value.
+Returns the numeric  value.
 
 =cut
 
@@ -184,7 +189,13 @@ sub ReadAnalogChannel ($$) {
 
 =head2 ReadAllAnalog();
 
-This reads the values from the two analog ports into $data1 and $data2.
+ ($val1,$val2) = $dev->ReadAllAnalog();
+
+ReadAllAnalog reads the values from the two analog ports into $data1 and $data2.
+
+Inputs: None
+
+Outputs: array of two numeric values
 
 =cut
 
@@ -199,6 +210,9 @@ sub ReadAllAnalog ($) {
 }
 
 =head2 OutputAnalogChannel();
+
+ $val = $dev->OutputAnalogChannel(1,0);
+ $val = $dev->OutputAnalogChannel(2,255);
 
 This outputs $value to the analog channel indicated by $channel.
 The indicated 8-bit Digital to Analogue Converter channel is altered according to the new value.
@@ -218,15 +232,23 @@ sub OutputAnalogChannel($$) {
 
 =head2 OutputAllAnalog();
 
+ $val = $dev->OutputAllAnalog(0,255);
+ $val = $dev->OutputAllAnalog(255);
+
 This outputs $value1 to the first analog channel, and $value2 to the
-second analog channel. See OutputAnalogChannel for more information.
+second analog channel. If only one argument is passed, then both channels are given the same value.
+
+See also: SetAllAnalog()
 
 =cut
 
 sub OutputAllAnalog($@) {
     my $self = shift;
     my $val1 = shift;
-    my $val2 = shift;
+    my $val2;
+ 
+    if (scalar @_) {$val2= shift;} else {$val2 = $val1}
+
     my $cid;
     $cid = 1;
     $self->set( "analog_out" . $cid, $val1 );
@@ -249,14 +271,14 @@ Output: value between 0 (min) and 255 (max)
 sub ClearAnalogChannel($$) {
     my $self = shift;
     my $cid  = shift;
-    $self->SetAnalogChannel( $cid, 0 );
+    $self->OutputAnalogChannel( $cid, 0 );
 }
 
 =head2 ($value1,$value1) ClearAllAnalog();
 
 The two DA-channels are set to the minimum output voltage (0 volt).
 
-Returns 255 on success. returns undef if either of the analog channels failed.
+Returns 0 on success. returns undef if either of the analog channels failed.
 
 =cut
 
@@ -264,9 +286,9 @@ sub ClearAllAnalog($) {
     my $self = shift;
     my $cid;
     $cid = 1;
-    my $one = $self->SetAnalogChannel( $cid, 0 );
+    my $one = $self->OutputAnalogChannel( $cid, 0 );
     $cid = 2;
-    my $two = $self->SetAnalogChannel( $cid, 0 );
+    my $two = $self->OutputAnalogChannel( $cid, 0 );
     return undef if $one == undef || $two == undef;
     return 0;
 }
@@ -281,8 +303,7 @@ Returns the set value.
 sub SetAnalogChannel($$$) {
     my $self = shift;
     my $cid  = shift;
-    my $val  = shift;
-    $self->set( "analog_out" . $cid, $val );
+    $self->set( "analog_out" . $cid, 255 );
 }
 
 =head2 SetAllAnalog();
@@ -294,8 +315,8 @@ Returns 255 on success. returns undef if either of the analog channels failed.
 
 sub SetAllAnalog ($) {
     my $self = shift;
-    my $one  = $self->SetAnalogChannel( 1, 255 );
-    my $two  = $self->SetAnalogChannel( 2, 255 );
+    my $one  = $self->OutputAnalogChannel( 1, 255 );
+    my $two  = $self->OutputAnalogChannel( 2, 255 );
     return undef unless ( $one && $two );
     return 255;
 }
@@ -580,9 +601,10 @@ sub get ($$) {
     my $mfile = shift;
     my $fh    = new IO::File;
     my $res   = undef;
+
     my $file  = $self->{pathToDevice} . "/$mfile";
 
-    if ( $fh->open("< $file") ) {
+    if ( !$self->{testHarness} && $fh->open("< $file") ) {
         my @io = <$fh>;
         $fh->close;
         if ( scalar(@io) != 1 ) {
@@ -593,7 +615,11 @@ sub get ($$) {
         chomp $res;
         $self->{io}->{$mfile} = $res;
         return $res;
-    }
+    } elsif ($self->{testHarness}) {
+	$res = -1;
+        $self->{io}->{$mfile} = $res;
+        return $res;
+    }	
 
     die "02 get: $file: failed. $!\n";
     $self->{io}->{$mfile} = undef;
@@ -620,24 +646,26 @@ sub set ($$$) {
     my $self  = shift;
     my $mfile = shift;
     my $val   = shift;
-    $val = "0" unless defined $val;
+
+    $val = "-1" unless defined $val;
 
     my $fh = new IO::File;
 
     my $file = $self->{pathToDevice} . "/$mfile";
 
-    if ( $fh->open("> $file") ) {
+    if ( !$self->{testHarness} && $fh->open("> $file") ) {
         print "set: $file: $val\n" if $self->{'debug'};
         print $fh $val;
         $fh->close;
         chomp $val;
         $self->{io}->{$mfile} = $val;
         return $self->{io}->{$mfile};
+    } elsif ( $self->{testHarnes} ) {
+        $self->{io}->{$mfile} = $val;
+	return $val;
     }
 
     die "01 set: $file: failed. Unable to open file handle: $!\n";
-    $self->{io}->{$mfile} = undef;
-    return $self->{io}->{$mfile};
 }
 
 #from Perl Cookbook (Oreilly)
@@ -720,6 +748,10 @@ sub InitDevice ($$) {
     $self->{pathToDevice} = $p->{pathToDevice};
 
 
+#Allow us to use the testHarness functionality without actually having the card plugged in.
+#This needs to automatically also invoke the test option.
+
+unless ($self->{testHarness}) {
 	#check for the existance of the directory
     warn("Mount point [$self->{pathToDevice}] does not exist") 
 	unless -d $self->{pathToDevice};
@@ -728,6 +760,9 @@ sub InitDevice ($$) {
     warn("Mount point [$self->{pathToDevice}] is not writable by user")
       unless -w $self->{pathToDevice};
 
+} else {
+	$p->{test} = 1;
+}
 
     #see k8055fs README
     my $commands =

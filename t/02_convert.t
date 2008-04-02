@@ -5,6 +5,16 @@ use Data::Dumper;
 open FILE, "< t/pathToDevice.txt" || die "Unable to open file!$!";
 my $pathToDevice = <FILE>;
 close FILE;
+
+
+open FILE, "< t/testHarness.txt" || die "Unable to open file!$!";
+ok( my $testHarness= <FILE>, "Setting device path for test" );
+close FILE;
+die "Unexpected attribute $testHarness defined by Makefile.PL" unless ($testHarness eq 'y' || $testHarness eq 'n');
+$testHarness = 0 if $testHarness eq 'n';
+$testHarness = 1 if $testHarness eq 'y';
+
+
 my $dev = Device::Velleman::K8055::Fuse->new(
     'pathToDevice' => $pathToDevice,
     'debug'        => 1

@@ -33,4 +33,10 @@ ok( $dev->SetAllAnalog() == 255, "4 Analog Channels  to  255" );
 ok( $dev->{io}->{analog_out1} == 255, "4 Check output 1" );
 ok( $dev->{io}->{analog_out2} == 255, "4 Check output 2" );
 
+ok( scalar($dev->OutputAllAnalog(100,200)) == 2, "5 Analog Channels  to  255" );
+
+ok( $dev->{io}->{analog_out1} == 100, "5 Check output 1" );
+ok( $dev->{io}->{analog_out2} == 200, "5 Check output 2" );
+
+#print Dumper $dev;
 #print Dumper $dev;
