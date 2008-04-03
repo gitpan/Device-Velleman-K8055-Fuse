@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.5
+Version 0.6
 
 =head1 ABSTRACT
 
@@ -130,6 +130,11 @@ pathToDevice : the name of the path where the k8055fs commands are mounted.
 
 Returns the object on success
 
+testHarness = 0/1 : Use a test harness rather than the card itself. This allows debugging of the applicaiton logic without relying on the hardware itself being present.
+
+When the test harness is activated, option test => 1 is automatically passed to the InitialiseDevice method.
+
+Furthermore, any Set functionality returns the set value or array of the value, as relevant. Any get function returns -1.
 
 =cut
 
@@ -169,10 +174,15 @@ sub new ($;@) {
 
 =head2 ReadAnalogChannel();
 
- $val1 = $dev->ReadAnalogChannel(1);
- $val2 = $dev->ReadAnalogChannel(2);
+ my $val1 = $dev->ReadAnalogChannel(1);
+ my $val2 = $dev->ReadAnalogChannel(2);
 
-This reads the value from the analog channel indicated by $channel (1 or 2).
+ my $channel = 1;
+ my $val3 = $dev->ReadAnalogChannel($channel);
+
+
+
+Reads the value from the analog channel indicated by (1 or 2).
 The input voltage of the selected 8-bit Analogue to Digital converter channel is converted to a value
 which lies between 0 and 255.
 
@@ -189,7 +199,7 @@ sub ReadAnalogChannel ($$) {
 
 =head2 ReadAllAnalog();
 
- ($val1,$val2) = $dev->ReadAllAnalog();
+ my ($val1,$val2) = $dev->ReadAllAnalog();
 
 ReadAllAnalog reads the values from the two analog ports into $data1 and $data2.
 
@@ -211,15 +221,18 @@ sub ReadAllAnalog ($) {
 
 =head2 OutputAnalogChannel();
 
- $val = $dev->OutputAnalogChannel(1,0);
- $val = $dev->OutputAnalogChannel(2,255);
+ my $val = $dev->OutputAnalogChannel(1,0);
+ my $val = $dev->OutputAnalogChannel(2,255);
 
 This outputs $value to the analog channel indicated by $channel.
+
 The indicated 8-bit Digital to Analogue Converter channel is altered according to the new value.
 This means that the value corresponds to a specific voltage. The value 0 corresponds to a
 minimum output voltage (0 Volt) and the value 255 corresponds to a maximum output voltage (+5V).
 A value of $value lying in between these extremes can be translated by the following formula :
 $value / 255 * 5V.
+
+See also SetAnalogChannel() and SetAllAnalog()
 
 =cut
 
@@ -232,8 +245,9 @@ sub OutputAnalogChannel($$) {
 
 =head2 OutputAllAnalog();
 
- $val = $dev->OutputAllAnalog(0,255);
- $val = $dev->OutputAllAnalog(255);
+ my ($val1,$val2) = $dev->OutputAllAnalog(0,255);
+
+ my $val = $dev->OutputAllAnalog(255);
 
 This outputs $value1 to the first analog channel, and $value2 to the
 second analog channel. If only one argument is passed, then both channels are given the same value.
@@ -250,10 +264,13 @@ sub OutputAllAnalog($@) {
     if (scalar @_) {$val2= shift;} else {$val2 = $val1}
 
     my $cid;
+    my @out;
     $cid = 1;
-    $self->set( "analog_out" . $cid, $val1 );
+    push @out, $self->set( "analog_out" . $cid, $val1 );
     $cid = 2;
-    $self->set( "analog_out" . $cid, $val2 );
+    push @out, $self->set( "analog_out" . $cid, $val2 );
+
+    if ( $val1 != $val2 ) {return @out} else {return $out[0]};
 }
 
 =head2 ClearAnalogChannel();
@@ -264,7 +281,10 @@ Input: channel number
 
 Output: value between 0 (min) and 255 (max)
 
- $dev->ClearAnalogChannel(1);
+ my $dev->ClearAnalogChannel(1);
+ my $dev->ClearAnalogChannel(2);
+
+See also OutputAnalogChannel(), ClearAllAnalog()
 
 =cut
 
@@ -279,6 +299,8 @@ sub ClearAnalogChannel($$) {
 The two DA-channels are set to the minimum output voltage (0 volt).
 
 Returns 0 on success. returns undef if either of the analog channels failed.
+
+ my $dev->ClearAllAnalog();
 
 =cut
 
@@ -295,8 +317,11 @@ sub ClearAllAnalog($) {
 
 =head2 SetAnalogChannel($channel);
 
-The selected 8-bit Digital to Analogue Converter channel is set to maximum output voltage.
-Returns the set value.
+Sets the selected 8-bit Digital output, which in turns sets the DAC voltage.
+Returns the set value (255) corresponding to this voltage.
+
+ my $channel = 1;
+ my $val = $dev->SetAllAnalog($channel);
 
 =cut
 
@@ -311,6 +336,8 @@ sub SetAnalogChannel($$$) {
 The two DA-channels are set to the maximum output voltage.
 Returns 255 on success. returns undef if either of the analog channels failed.
 
+ my $val = $dev->SetAllAnalog();
+
 =cut
 
 sub SetAllAnalog ($) {
@@ -321,12 +348,19 @@ sub SetAllAnalog ($) {
     return 255;
 }
 
-=head2 WriteAllDigital($value);
+=head2 WriteAllDigital();
 
 The channels of the digital output port are updated with the status of the corresponding
 bits in the $value parameter. A high (1) level means that the microcontroller IC1 output
 is set, and a low (0) level means that the output is cleared.
-$value is a value between 0 and 255 that is sent to the output port (8 channels).
+
+$value is a decimal value between 0 and 255 that is sent to the output port (8 channels).
+
+ # set all 8 digital outputs to 1.
+ my $val = 1;
+ $res = $dev->WriteAllDigital($val);
+
+Returns the value on success, returns undef on error.
 
 =cut
 
@@ -336,12 +370,17 @@ sub WriteAllDigital ($$) {
     $self->set( "digital_out", $val );
 }
 
-=head2 ClearDigitalChannel($channel);
+=head2 ClearDigitalChannel();
 
 This clears the digital output channel $channel, which can have a value between 1 and 8
 that corresponds to the output channel that is to be cleared.
 
 This is the opposite of SetDigitalChannel.
+
+ # set digital channel 3  to 0
+ $res = $dev->ClearDigitalChannel(3);
+
+Returns 0 on success, undef on error.
 
 =cut
 
@@ -355,6 +394,11 @@ sub ClearDigitalChannel ($$) {
 
 This clears (sets to 0) all digital output channels.
 
+ # set all digital channels  to 0
+ $res = $dev->ClearAllDigital();
+
+Returns 0 on success, undef on error.
+
 =cut
 
 sub ClearAllDigital ($) {
@@ -365,13 +409,16 @@ sub ClearAllDigital ($) {
     return 0;
 }
 
-=head2 SetDigitalChannel($channel);
+=head2 SetDigitalChannel();
 
 
 This sets the digital output channel $channel, which can have a value between 1 and 8
 that corresponds to the output channel that is to be cleared.
 
 This is the opposite of ClearDigitalChannel.
+
+ # set digital channel 3  to 1
+ $res = $dev->SetDigitalChannel(3);
 
 =cut
 
@@ -384,6 +431,12 @@ sub SetDigitalChannel ($$) {
 =head2 AssignDigitalChannel($channel,$value,[$digitalFlag]);
 
 This sets digital channel $channel to the assigned value.
+
+ # set digital channel 3  to 1
+ $res = $dev->AssignDigitalChannel(3,1);
+
+ # set digital channel 5  to 0
+ $res = $dev->AssignDigitalChannel(5,0);
 
 =cut 
 
@@ -440,7 +493,8 @@ sub AssignDigitalChannel ($$$) {
 
 This sets all digital output channels to 1 (true).
 
-$obj->SetAllDigital();
+ # set digital channels to 1
+ $res = $dev->SetAllDigital();
 
 sets all digital output channels to 1, giving '1111111'.
 
@@ -459,13 +513,19 @@ sub SetAllDigital ($) {
     return 1;
 }
 
-=head2 ReadAllDigital('bin') or ReadAllDigital();
+=head2 ReadAllDigital()
 
 This reads all 5 digital ports at once. The 5 least significant bits correspond to the
 status of the input channels. A high (1) means that the channel is set, a low (0) means that the channel is cleared.
 Returns the decimal value of the the 8-channel interface card (0-255) unless flag 'bin' is set.
 
-If flag 'bin' is set, then returns an array of binary characters (0/1).
+If input contains one string with content  'bin' , then returns an array of binary characters (0/1).
+
+ # Get the value of all digital input channels as an array of binary values in big-endian order 
+ $res = $dev->ReadAllDigital();
+
+ # Get the value of all digital input channels as a decimal value
+ $res = $dev->ReadAllDigital('dec');
 
 Returns undef on error.
 
@@ -494,7 +554,7 @@ sub ReadAllDigital ($;$) {
 
 }
 
-=head2 ReadDigitalChannel($channel);
+=head2 ReadDigitalChannel();
 
 The status of the selected input $channel is read.
 
@@ -505,6 +565,42 @@ The return value will be true (1) if the channel has been set, false (0) otherwi
 
 returns undef on error.
  
+ # Get the value of a digital input channel
+ $res = $dev->ReadDigitalChannel(1);
+	    
+Note: on the K8055, the addresses of digital inputs 1-5 are not the equivalent binary values.
+
+Refer to the hash $dev->{I} giving the mappings between the card digital input number I and equivalent decimal and binary value, and bit number. $dev->{I} is defined in the constructor.
+
+ $dev->{I} = {
+
+        #decimal value vs I-number
+        i2d => {
+            1 => 16,
+            2 => 32,
+            3 => 1,
+            4 => 64,
+            5 => 128,
+        },
+
+        #binary value vs I-number
+        i2b => {
+            1 => '10000',
+            2 => '100000',
+            3 => '1',
+            4 => '1000000',
+            5 => '10000000'
+        },
+
+        #bit number (0-7) value vs I-number
+        i2i => {
+            1 => '4',
+            2 => '5',
+            3 => '0',
+            4 => '6',
+            5 => '7',
+        }
+
 =cut
 
 sub ReadDigitalChannel ($$) {
@@ -522,7 +618,7 @@ sub ReadDigitalChannel ($$) {
     return $val;
 }
 
-=head2 ReadCounter($counternumber);
+=head2 ReadCounter();
 
 The function returns the status of the selected 16 bit pulse counter.
 The counter number 1 counts the pulses fed to the input I1 and the counter number 2 counts the
@@ -532,6 +628,9 @@ returns an 16 bit count on success.
 
 returns undef on error.
 
+ my $count = $dev->ReadCounter(1);
+ my $count = $dev->ReadCounter(2);
+
 =cut
 
 sub ReadCounter ($$) {
@@ -540,11 +639,14 @@ sub ReadCounter ($$) {
     $self->get( "counter" . $cid );
 }
 
-=head2 ResetCounter($counternumber);
+=head2 ResetCounter();
 
 This resets the selected pulse counter.
 
 returns undef on error.
+
+ $my val = $dev->ResetCounter(1);
+ $my val = $dev->ResetCounter(2);
 
 =cut
 
@@ -554,7 +656,7 @@ sub ResetCounter ($$) {
     $self->set( "counter" . $cid, 0 );
 }
 
-=head2 SetCounterDebounceTime($counternumber, $debouncetime);
+=head2 SetCounterDebounceTime();
 
 The counter inputs are debounced in the software to prevent false triggering when mechanical
 switches or relay inputs are used. The debounce time is equal for both falling and rising edges. The
@@ -568,6 +670,12 @@ pulse counter. Debounce time value may vary between 0 and 5000.
 returns the set time in milliseconds on success.
 
 returns undef on error.
+
+ #set the debounce time for counter 2 to 500ms 
+ $my time = $dev->SetCounterDebounceTime(2,500);
+
+ #set the debounce time for counter 1 to 2 seconds
+ $my time = $dev->SetCounterDebounceTime(1,2000);
 
 =cut
 
@@ -584,13 +692,19 @@ sub SetCounterDebounceTime($$$) {
     $self->set( "debounce" . $cid, $time );
 }
 
-=head2 get($file,$value)
+=head2 get()
 
 uses IO::File to retrieve data from the FUSE files. Refer to the k8055fs readme for details.
 
-  $dev->set('/tmp/8055/digital_out',255);
+  my $res = $dev->get('digital_in',255);
+  my $res = $dev->get('analog_in1',255);
+  my $res = $dev->get('analog_in2',255);
+  my $res = $dev->get('counter1',255);
+  my $res = $dev->get('counter2',255);
 
 This is a low-level call that is not particualrly intended for direct access from the API.
+
+The path to the command is defined by hash key pathToDevice in the constructor.
 
 Returns $value on success and undef on error.
 
@@ -630,13 +744,19 @@ sub get ($$) {
 
 uses IO::File to send io to the FUSE files. Refer to the k8055fs readme for details.
 
-  $dev->set('/tmp/8055/digital_out',255);
+  my $res = $dev->set('digital_out',255);
+  my $res = $dev->set('analog_out1',255);
+  my $res = $dev->set('debounce1',255);
+  my $res = $dev->set('debounce2',255);
+
 
 This is a low-level call that is not particualrly intended for direct access from the API.
 Using the set function could desynchronize the internal representation for the binary array
 held in array 
   
   $dev->{binary_out}
+
+The path to the command is defined by hash key pathToDevice in the constructor.
 
 Returns $value on success and undef on error.
 
@@ -674,7 +794,7 @@ sub set ($$$) {
 
 convert a decimal to a string representing a bin
 
-The binary string is represented as a big-endiani. In big-endian encoding, digits increase as the string progresses to the left:
+The binary string is represented as a big-endian. In big-endian encoding, digits increase as the string progresses to the left:
 
    0 (dec) =        0 (bin).
    1 (dec) =        1 (bin).
