@@ -2,7 +2,7 @@ use 5.008008;
 use ExtUtils::MakeMaker;
 use Config;
 
-exit(0) if($ENV{AUTOMATED_TESTING});
+#exit(0) if($ENV{AUTOMATED_TESTING});
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
