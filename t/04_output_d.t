@@ -1,12 +1,23 @@
-use Test::More tests => 36;
+use Test::More tests => 38;
 use Device::Velleman::K8055::Fuse;
 use Data::Dumper;
 
 open FILE, "< t/pathToDevice.txt" || die "Unable to open file!$!";
-my $pathToDevice = <FILE>;
+ok( my $pathToDevice= <FILE>, "Get device path for test" );
 close FILE;
+
+open FILE, "< t/testHarness.txt" || die "Unable to open file!$!";
+ok( my $testHarness= <FILE>, "Get test harness flag" );
+close FILE;
+
+die "Unexpected attribute $testHarness defined by Makefile.PL" unless ($testHarness eq 'y' || $testHarness eq 'n');
+$testHarness = 0 if $testHarness eq 'n';
+$testHarness = 1 if $testHarness eq 'y';
+
+
 my $dev = Device::Velleman::K8055::Fuse->new(
     'pathToDevice' => $pathToDevice,
+        testHarness => $testHarness,
     'debug'        => 1
 ) || die "Failed to get an object $!";
 
@@ -19,6 +30,10 @@ my $_11111111 = [ 1, 1, 1, 1, 1, 1, 1, 1 ];
 my $_11111000 = [ 1, 1, 1, 1, 0, 0, 0, 0 ];
 my $_11110000 = [ 1, 1, 1, 1, 0, 0, 0, 0 ];
 my $_11100000 = [ 1, 1, 1, 0, 0, 0, 0, 0 ];
+
+SKIP: {
+             skip "testHarness", 36 if $testHarness;
+
 
 ok( $dev->ClearAllDigital() == 0, "0a Clear all Digital Channels" );
 ok( eq_array( $dev->{binary_out}, $_00000000 ),
@@ -85,3 +100,4 @@ for ( 1 .. 100 ) {
 }
 
 ok( print Dumper $dev->{binary_out}, "Correlate to card digital out LEDs" );
+}

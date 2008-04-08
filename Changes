@@ -4,3 +4,26 @@ Revision history for Perl extension Device::Velleman::K8055::Fuse.
 	- original version; created by h2xs 1.23 with options
 		-AXc -n Device::Velleman::K8055::Fuse
 
+0.1   Thu Mar 27 13:51:37 CET 2008
+	- Initial deployment version.
+
+0.2   Sat Mar 29 13:51:37 CET 2008
+	- Improved testing: Added init testing. Improved POD documentation.
+
+0.3   Sun Mar 30 22:00:00 CET 2008
+	- Improved POD.
+
+0.4   Mon Mar 31 13:08:46 CEST 2008
+	- Improved POD. Ipmroved sub OutputAllAnalog
+
+0.5   Thu Apr  3 10:55:49 CEST 2008
+	- Improved automated testing in Makefile.PL and POD documentation
+
+0.6   Thu Apr  3 18:55:49 CEST 2008	
+	- Improved default behaviour for some setter methods and updated  POD documentation
+
+0.7   Sun Apr  6 12:05:39 CEST 2008
+	- Repaired testHarness test behaviour for testing when the card is not plugged in
+
+0-8   Sun Apr  6 12:37:55 CEST 2008
+	- Repaired analog tests, broken in 0.6

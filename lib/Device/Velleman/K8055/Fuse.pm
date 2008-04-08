@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.6';
+our $VERSION = '0.8';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.6
+Version 0.8
 
 =head1 ABSTRACT
 
@@ -98,7 +98,7 @@ my %default_attrs = (
 
 );
 
-=head2 new(%args)
+=head2 new()
 
 The constructor. Buils the object.
 
@@ -294,7 +294,7 @@ sub ClearAnalogChannel($$) {
     $self->OutputAnalogChannel( $cid, 0 );
 }
 
-=head2 ($value1,$value1) ClearAllAnalog();
+=head2 ClearAllAnalog();
 
 The two DA-channels are set to the minimum output voltage (0 volt).
 
@@ -315,7 +315,7 @@ sub ClearAllAnalog($) {
     return 0;
 }
 
-=head2 SetAnalogChannel($channel);
+=head2 SetAnalogChannel();
 
 Sets the selected 8-bit Digital output, which in turns sets the DAC voltage.
 Returns the set value (255) corresponding to this voltage.
@@ -428,10 +428,13 @@ sub SetDigitalChannel ($$) {
     return $self->AssignDigitalChannel( $cid, 1 );
 }
 
-=head2 AssignDigitalChannel($channel,$value,[$digitalFlag]);
+=head2 AssignDigitalChannel();
 
-This sets digital channel $channel to the assigned value.
+This assigns a value todigital channel $channel to the assigned value.
 
+ # set digital channel $channel to binary value $value
+ $res = $dev->AssignDigitalChannel($channel,$value);
+ 
  # set digital channel 3  to 1
  $res = $dev->AssignDigitalChannel(3,1);
 

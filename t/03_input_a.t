@@ -1,4 +1,4 @@
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Device::Velleman::K8055::Fuse;
 use Data::Dumper;
 
@@ -19,19 +19,15 @@ my $dev = Device::Velleman::K8055::Fuse->new(
 	testHarness => $testHarness,
     'debug'        => 1
 ) || die "Failed to get an object $!";
-if ($testHarness) {
+
+SKIP: {
+             skip "testHarness", 4 if $testHarness;
+
 	ok( defined($dev) && ref $dev eq 'Device::Velleman::K8055::Fuse',
     'new() works' );
+
 	ok( $dev->ReadAnalogChannel(1) >= 0 , "1 Analog Channel 1" );
 	ok( $dev->ReadAnalogChannel(2) >= 0, "2 Analog Channel 2" );
-	ok( $dev->ReadAllAnalog(),           "11 All Analog" );
-} else {
-
-	ok( defined($dev) && ref $dev eq 'Device::Velleman::K8055::Fuse',
-    'new() works' );
-
-	ok( $dev->ReadAnalogChannel(1) < 0 , "1 Analog Channel 1" );
-	ok( $dev->ReadAnalogChannel(2) < 0, "2 Analog Channel 2" );
 	ok( $dev->ReadAllAnalog(),           "11 All Analog" );
 }
 
