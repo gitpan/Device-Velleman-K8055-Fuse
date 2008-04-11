@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.9';
+our $VERSION = '0.10';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.8
+Version 0.10
 
 =head1 ABSTRACT
 

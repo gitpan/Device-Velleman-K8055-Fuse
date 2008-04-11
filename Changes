@@ -27,3 +27,6 @@ Revision history for Perl extension Device::Velleman::K8055::Fuse.
 
 0-8   Sun Apr  6 12:37:55 CEST 2008
 	- Repaired analog tests, broken in 0.6
+
+0.1   Thursday Apr 10 9:40 CEST 2008
+	- Added Test::Pod::Coverage test
