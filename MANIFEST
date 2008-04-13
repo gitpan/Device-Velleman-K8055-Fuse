@@ -15,4 +15,5 @@ t/99_test_pod_coverage.t
 examples/01_simple.pl
 examples/02_reader.pl
 examples/02_setter.pl
+LICENSE
 META.yml                                 Module meta-data (added by MakeMaker)

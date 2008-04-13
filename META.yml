@@ -1,8 +1,8 @@
 --- #YAML:1.0
 name:                Device-Velleman-K8055-Fuse
-version:             0.91
-abstract:            ~
-license:             ~
+version:             0.92
+abstract:            Communication with the Velleman K8055 USB experiment board using Fuse and K8055fs
+license:             perl
 author:              
     - Ronan Oger<ronan@cpan.org>
 generated_by:        ExtUtils::MakeMaker version 6.44

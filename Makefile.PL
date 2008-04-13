@@ -1,4 +1,4 @@
-use 5.008008;
+use 5.008;
 use ExtUtils::MakeMaker;
 use Config;
 
@@ -73,7 +73,8 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Device/Velleman/K8055/Fuse.pm', # finds $VERSION
     PREREQ_PM         => {IO::File=>1.0}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (#ABSTRACT_FROM  => 'lib/Device/Velleman/K8055/Fuse.pm', # retrieve abstract from module
+      (ABSTRACT_FROM  => 'lib/Device/Velleman/K8055/Fuse.pm',
+	LICENSE => 'perl',
        AUTHOR         => 'Ronan Oger<ronan@cpan.org>') : ()),
 );
 
