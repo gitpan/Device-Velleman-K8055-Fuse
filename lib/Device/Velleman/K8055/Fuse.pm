@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.92';
+our $VERSION = '0.93';
 
 =pod
 
