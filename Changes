@@ -25,7 +25,7 @@ Revision history for Perl extension Device::Velleman::K8055::Fuse.
 0.7   Sun Apr  6 12:05:39 CEST 2008
 	- Repaired testHarness test behaviour for testing when the card is not plugged in
 
-0-8   Sun Apr  6 12:37:55 CEST 2008
+0.8   Sun Apr  6 12:37:55 CEST 2008
 	- Repaired analog tests, broken in 0.6
 
 0.9   Thursday Apr 10 9:40 CEST 2008
@@ -39,4 +39,8 @@ Revision history for Perl extension Device::Velleman::K8055::Fuse.
 	- Improved testing.
 	
 0.92   Thursday Apr 10 9:40 CEST 2008
+	- Improved Makefile.PL for improved kwalitee
+
+0.94   Thursday Apr 10 9:40 CEST 2008
+	- Fixed manifest  t/98_all_pod.t
 	- Improved Makefile.PL for improved kwalitee
