@@ -1,6 +1,6 @@
 package Device::Velleman::K8055::Fuse;
 
-use 5.008008;
+use 5.008;
 
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use Data::Dumper;
 
 our ( @EXPORT_OK, %EXPORT_TAGS );
 
-our $VERSION = '0.94';
+our $VERSION = '0.95';
 
 =pod
 
@@ -24,7 +24,7 @@ Device::Velleman::K8055::Fuse - Communication with the Velleman K8055 USB experi
 
 =head1 VERSION
 
-Version 0.94
+Version 0.95
 
 =head1 ABSTRACT
 
@@ -152,22 +152,23 @@ sub new ($;@) {
     $self->{'binary_out'} = [ 0, 0, 0, 0, 0, 0, 0, 0 ];
 
     my $dev = bless( $self, $class );
-    if (defined $dev->{initDevice}) {
+    if ( defined $dev->{initDevice} ) {
 
-	$dev->InitDevice( $dev->{initDevice} );
+        $dev->InitDevice( $dev->{initDevice} );
 
-    } else {
-	unless ($self->{testHarness}) {
-	#check for the existance of the directory
-	warn("Mount point [$dev->{pathToDevice}] does not exist") 
-		unless -d $dev->{pathToDevice};
-    	warn("Mount point [$dev->{pathToDevice}] is not readable by user")
-      		unless -r $dev->{pathToDevice};
-    	warn("Mount point [$dev->{pathToDevice}] is not writable by user")
-      		unless -w $dev->{pathToDevice};
-	}
-	}
+    }
+    else {
+        unless ( $self->{testHarness} ) {
 
+            #check for the existance of the directory
+            warn("Mount point [$dev->{pathToDevice}] does not exist")
+              unless -d $dev->{pathToDevice};
+            warn("Mount point [$dev->{pathToDevice}] is not readable by user")
+              unless -r $dev->{pathToDevice};
+            warn("Mount point [$dev->{pathToDevice}] is not writable by user")
+              unless -w $dev->{pathToDevice};
+        }
+    }
 
     return $dev;
 }
@@ -260,8 +261,9 @@ sub OutputAllAnalog($@) {
     my $self = shift;
     my $val1 = shift;
     my $val2;
- 
-    if (scalar @_) {$val2= shift;} else {$val2 = $val1}
+
+    if   ( scalar @_ ) { $val2 = shift; }
+    else               { $val2 = $val1 }
 
     my $cid;
     my @out;
@@ -270,7 +272,8 @@ sub OutputAllAnalog($@) {
     $cid = 2;
     push @out, $self->set( "analog_out" . $cid, $val2 );
 
-    if ( $val1 != $val2 ) {return @out} else {return $out[0]};
+    if   ( $val1 != $val2 ) { return @out }
+    else                    { return $out[0] }
 }
 
 =head2 ClearAnalogChannel();
@@ -719,7 +722,7 @@ sub get ($$) {
     my $fh    = new IO::File;
     my $res   = undef;
 
-    my $file  = $self->{pathToDevice} . "/$mfile";
+    my $file = $self->{pathToDevice} . "/$mfile";
 
     if ( !$self->{testHarness} && $fh->open("< $file") ) {
         my @io = <$fh>;
@@ -732,11 +735,12 @@ sub get ($$) {
         chomp $res;
         $self->{io}->{$mfile} = $res;
         return $res;
-    } elsif ($self->{testHarness}) {
-	$res = -1;
+    }
+    elsif ( $self->{testHarness} ) {
+        $res = -1;
         $self->{io}->{$mfile} = $res;
         return $res;
-    }	
+    }
 
     die "02 get: $file: failed. $!\n";
     $self->{io}->{$mfile} = undef;
@@ -783,9 +787,10 @@ sub set ($$$) {
         chomp $val;
         $self->{io}->{$mfile} = $val;
         return $self->{io}->{$mfile};
-    } elsif ( $self->{testHarnes} ) {
+    }
+    elsif ( $self->{testHarnes} ) {
         $self->{io}->{$mfile} = $val;
-	return $val;
+        return $val;
     }
 
     die "01 set: $file: failed. Unable to open file handle: $!\n";
@@ -858,39 +863,43 @@ sub InitDevice ($$) {
     my $self = shift;
 
     my $p = shift;
+
     #initialise command line attributes
-    my $b          = '';
-    my $U          = '';
-    my $fuseArgs   = '';
+    my $b        = '';
+    my $U        = '';
+    my $fuseArgs = '';
 
     $self->{initParams} = $p;
-    $b = "-b ".$p->{'-b'} if $p->{'-b'};
-    $U = "-U" if $p->{'-U'};
-    $fuseArgs = '-o '.$p->{fuseArgs} if $p->{fuseArgs};
-	#pass the device path to the object
-    $self->{pathToDevice} = $p->{pathToDevice};
+    $b        = "-b " . $p->{'-b'}     if $p->{'-b'};
+    $U        = "-U"                   if $p->{'-U'};
+    $fuseArgs = '-o ' . $p->{fuseArgs} if $p->{fuseArgs};
 
+    #pass the device path to the object
+    $self->{pathToDevice} = $p->{pathToDevice};
 
 #Allow us to use the testHarness functionality without actually having the card plugged in.
 #This needs to automatically also invoke the test option.
 
-unless ($self->{testHarness}) {
-	#check for the existance of the directory
-    warn("Mount point [$self->{pathToDevice}] does not exist") 
-	unless -d $self->{pathToDevice};
-    warn("Mount point [$self->{pathToDevice}] is not readable by user")
-      unless -r $self->{pathToDevice};
-    warn("Mount point [$self->{pathToDevice}] is not writable by user")
-      unless -w $self->{pathToDevice};
+    unless ( $self->{testHarness} ) {
 
-} else {
-	$p->{test} = 1;
-}
+        #check for the existance of the directory
+        warn("Mount point [$self->{pathToDevice}] does not exist")
+          unless -d $self->{pathToDevice};
+        warn("Mount point [$self->{pathToDevice}] is not readable by user")
+          unless -r $self->{pathToDevice};
+        warn("Mount point [$self->{pathToDevice}] is not writable by user")
+          unless -w $self->{pathToDevice};
+
+    }
+    else {
+        $p->{test} = 1;
+    }
 
     #see k8055fs README
-    my $commands =
-      [ [ 'modprobe', 'fuse' ],
-        [ 'k8055fs', $b, $U, $p->{pathToDevice}, $fuseArgs ] ];
+    my $commands = [
+        [ 'modprobe', 'fuse' ],
+        [ 'k8055fs', $b, $U, $p->{pathToDevice}, $fuseArgs ]
+    ];
 
     my $failed = 0;
     foreach my $action (@$commands) {
@@ -898,32 +907,46 @@ unless ($self->{testHarness}) {
 
         my $cmd = join( " ", @args );
 
-        push (@{$self->{init}->{cmd}}, $cmd);
+        push( @{ $self->{init}->{cmd} }, $cmd );
 
         if ( $p->{test} ) {
-	        print "InitialiseDevice Test: $cmd\n";
+            print "InitialiseDevice Test: $cmd\n";
             next;
         }
         system($cmd) == 0 or warn "system $cmd failed: $?";
 
         #You can check all the failure possibilities by inspecting $? like this:
         if ( $? == -1 ) {
-            push (@{$self->{init}->{errors}}, "Failed: [$cmd]". $failed++ . ":$!");
+            push(
+                @{ $self->{init}->{errors} },
+                "Failed: [$cmd]" . $failed++ . ":$!"
+            );
         }
         elsif ( $? & 127 ) {
-            push (@{$self->{initParams}->{errors}}, printf "child died with signal %d, %s coredump\n",
-              ( $? & 127 ), ( $? & 128 ) ? 'with' : 'without');
+            push(
+                @{ $self->{initParams}->{errors} },
+                printf "child died with signal %d, %s coredump\n",
+                ( $? & 127 ),
+                ( $? & 128 ) ? 'with' : 'without'
+            );
             $failed++;
-            push (@{$self->{init}->{errors}}, "Failed: [$cmd]". $failed++ . ":$!");
+            push(
+                @{ $self->{init}->{errors} },
+                "Failed: [$cmd]" . $failed++ . ":$!"
+            );
         }
         else {
-            push (@{$self->{init}->{errors}}, printf "child exited with value %d\n", $? >> 8);
+            push(
+                @{ $self->{init}->{errors} },
+                printf "child exited with value %d\n",
+                $? >> 8
+            );
         }
     }
 
     if ($failed) {
-	print STDERR join ("\n" , @{$self->{init}->{errors}}) if $failed;
-	return undef;
+        print STDERR join( "\n", @{ $self->{init}->{errors} } ) if $failed;
+        return undef;
     }
     return;
 }
