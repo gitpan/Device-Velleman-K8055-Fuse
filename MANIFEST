@@ -11,11 +11,10 @@ t/03_input_d.t
 t/04_output_a.t
 t/04_output_d.t
 t/06_counter.t.deep
-t/99_test_pod_coverage.t
 t/98_all_pod.t
+t/99_test_pod_coverage.t
 examples/01_simple.pl
 examples/02_reader.pl
 examples/02_setter.pl
 LICENSE
-t/98_all_pod.t
 META.yml

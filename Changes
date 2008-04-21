@@ -47,3 +47,7 @@ Revision history for Perl extension Device::Velleman::K8055::Fuse.
 
 0.95   Monday Apr 21 10:45 CEST 2008
 	- Improved META.yml
+
+0.96   Monday Apr 21 20:10 CEST 2008
+	- Fixed manifest double entry for  t/98_all_pod.t
+
